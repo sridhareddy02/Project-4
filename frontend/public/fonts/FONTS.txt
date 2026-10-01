@@ -1,0 +1,5 @@
+Fonts used by this site (self-hosted, latin subset), all under the SIL Open Font License 1.1:
+- Space Grotesk (Florian Karsten)  https://github.com/floriankarsten/space-grotesk
+- Manrope (Mikhail Sharanda)  https://github.com/sharanda/manrope
+- JetBrains Mono (JetBrains)  https://github.com/JetBrains/JetBrainsMono
+Packaged via Fontsource: https://fontsource.org

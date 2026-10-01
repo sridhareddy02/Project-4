@@ -1,0 +1,167 @@
+{
+  "generated": "2026-10-01",
+  "data": {
+    "start": "2025-09-28",
+    "end": "2026-09-27",
+    "rows": 29176
+  },
+  "plans": {
+    "dev": {
+      "n": 58,
+      "intent_accuracy": 1.0,
+      "plan_accuracy": 1.0,
+      "field_accuracy": {
+        "intent": 1.0,
+        "metrics": 1.0,
+        "group_by": 1.0,
+        "filters": 1.0,
+        "period": 1.0,
+        "compare": 1.0,
+        "horizon": 1.0,
+        "top_n": 1.0,
+        "order": 1.0,
+        "grain": 1.0,
+        "subject": 1.0
+      },
+      "failures": []
+    },
+    "heldout": {
+      "n": 40,
+      "intent_accuracy": 1.0,
+      "plan_accuracy": 1.0,
+      "field_accuracy": {
+        "intent": 1.0,
+        "metrics": 1.0,
+        "group_by": 1.0,
+        "filters": 1.0,
+        "period": 1.0,
+        "compare": 1.0,
+        "order": 1.0,
+        "horizon": 1.0,
+        "top_n": 1.0,
+        "grain": 1.0,
+        "subject": 1.0
+      },
+      "failures": []
+    }
+  },
+  "numbers": {
+    "checked": 67,
+    "correct": 67,
+    "accuracy": 1.0,
+    "failures": []
+  },
+  "adversarial": {
+    "n": 24,
+    "accuracy": 1.0,
+    "failures": [],
+    "warehouse_intact": true
+  },
+  "grounding": {
+    "answers": 98,
+    "answers_passed": 98,
+    "pass_rate": 1.0,
+    "numbers_checked": 460,
+    "numbers_traced": 460,
+    "failures": []
+  },
+  "events": [
+    {
+      "event": "E1",
+      "kind": "tracking break (paid search)",
+      "question": "Any anomalies in orders for paid search over the last 12 months?",
+      "found": true,
+      "detail": "Orders -97% on Feb 10 to Feb 13, 2026, where: Search - Shopping Feed (36%); Search - Non-brand Category (32%)"
+    },
+    {
+      "event": "E3",
+      "kind": "Black Friday weekend peak",
+      "question": "Any anomalies in revenue over the last 12 months?",
+      "found": true,
+      "detail": "Revenue +97% on Nov 28 to Dec 1, 2025; note: overlaps Black Friday weekend and Cyber Monday, a known retail date"
+    },
+    {
+      "event": "E5",
+      "kind": "pacing bug (one day of 4x spend)",
+      "question": "Any anomalies in spend for paid search over the last 12 months?",
+      "found": true,
+      "detail": "Spend +111% on Apr 9, 2026, where: Search - Non-brand Category (100%)"
+    },
+    {
+      "event": "E6",
+      "kind": "ingestion gap (organic search rows missing)",
+      "question": "Any anomalies in revenue over the last 12 months?",
+      "found": true,
+      "detail": "warned about the gap and labelled the incident as a probable data gap"
+    },
+    {
+      "event": "E2",
+      "kind": "creative fatigue (Social - Prospecting Lookalike)",
+      "question": "Why did paid social ROAS drop in June?",
+      "found": true,
+      "detail": "largest funnel step: Click-through rate; leading campaign: Social - Prospecting Lookalike"
+    },
+    {
+      "event": "E4",
+      "kind": "display CPM inflation (+35%)",
+      "question": "Why did display CAC go up in August?",
+      "found": true,
+      "detail": "largest funnel step: Cost per thousand impressions (CPM) (+31.6%)"
+    }
+  ],
+  "false_alarms": {
+    "series": 58,
+    "incidents": 8,
+    "per_series_year": 0.138,
+    "examples": [
+      [
+        "orders",
+        "all",
+        "2026-01-15"
+      ],
+      [
+        "revenue",
+        "email",
+        "2026-02-22"
+      ],
+      [
+        "revenue",
+        "email",
+        "2026-04-11"
+      ],
+      [
+        "revenue",
+        "email",
+        "2026-08-16"
+      ],
+      [
+        "aov",
+        "email",
+        "2025-10-12"
+      ]
+    ]
+  },
+  "latency_ms": {
+    "p50": 14.9,
+    "p95": 911.0,
+    "max": 1435.0
+  },
+  "thresholds": {
+    "dev_plan_accuracy": 0.9,
+    "heldout_plan_accuracy": 0.7,
+    "numeric_accuracy": 0.99,
+    "adversarial_accuracy": 0.95,
+    "grounding_pass_rate": 1.0,
+    "events_recovered": 6,
+    "false_incidents_per_series_year": 0.5
+  },
+  "gates": {
+    "dev_plan_accuracy": true,
+    "heldout_plan_accuracy": true,
+    "numeric_accuracy": true,
+    "adversarial_accuracy": true,
+    "grounding_pass_rate": true,
+    "events_recovered": true,
+    "false_incidents_per_series_year": true
+  }
+}

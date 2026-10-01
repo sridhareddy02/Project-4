@@ -1,0 +1,210 @@
+# The semantic layer: every metric, dimension and glossary entry the copilot may use.
+# Nothing outside this file can reach the warehouse: plans are validated against it and SQL is compiled from it.
+
+measures:            # additive: SUM over any slice
+  spend:         {label: Spend,         format: currency, synonyms: [ad spend, media spend, media cost, cost, investment, spending]}
+  impressions:   {label: Impressions,   format: count,    synonyms: [impressions, views, reach, deliveries, delivered emails]}
+  clicks:        {label: Clicks,        format: count,    synonyms: [clicks, click volume]}
+  sessions:      {label: Sessions,      format: count,    synonyms: [sessions, visits, site visits, traffic, visitors]}
+  orders:        {label: Orders,        format: count,    synonyms: [orders, purchases, transactions, conversions, conversion volume]}
+  revenue:       {label: Revenue,       format: currency, synonyms: [revenue, sales, gross sales, turnover]}
+  new_customers: {label: New customers, format: count,    synonyms: [new customers, new buyers, first time buyers, first-time buyers, new customer count, acquired customers]}
+
+ratios:              # derived: SUM(numerator) / SUM(denominator), never an average of daily ratios
+  ctr:  {label: CTR,  numerator: clicks,  denominator: impressions, format: percent, scale: 1,    good: up,
+         synonyms: [ctr, click through rate, click-through rate, click rate]}
+  cpc:  {label: CPC,  numerator: spend,   denominator: clicks,      format: currency2, scale: 1,    good: down, requires_spend: true,
+         synonyms: [cpc, cost per click]}
+  cpm:  {label: CPM,  numerator: spend,   denominator: impressions, format: currency2, scale: 1000, good: down, requires_spend: true,
+         synonyms: [cpm, cost per thousand, cost per mille, cost per 1000 impressions]}
+  cvr:  {label: Conversion rate, numerator: orders, denominator: sessions, format: percent, scale: 1, good: up,
+         synonyms: [conversion rate, cvr, conv rate, session conversion rate, converting, converts, convert best, converts best]}
+  aov:  {label: AOV,  numerator: revenue, denominator: orders,      format: currency2, scale: 1,    good: up,
+         synonyms: [aov, average order value, basket size, average basket, order value]}
+  roas: {label: ROAS, numerator: revenue, denominator: spend,       format: multiple, scale: 1,     good: up, requires_spend: true,
+         synonyms: [roas, return on ad spend, return on spend, ad return, revenue per dollar]}
+  cac:  {label: CAC,  numerator: spend,   denominator: new_customers, format: currency2, scale: 1,   good: down, requires_spend: true,
+         synonyms: [cac, customer acquisition cost, cost to acquire, cost per new customer, acquisition cost]}
+  cpa:  {label: CPA,  numerator: spend,   denominator: orders,      format: currency2, scale: 1,     good: down, requires_spend: true,
+         synonyms: [cpa, cost per acquisition, cost per order, cost per conversion, cost per purchase]}
+  rps:  {label: Revenue per session, numerator: revenue, denominator: sessions, format: currency2, scale: 1, good: up,
+         synonyms: [revenue per session, rps, rev per session, value per session]}
+
+# Exact multiplicative funnel for ratio metrics. Each factor is (numerator measure, denominator measure, plain label).
+# The product of the factors telescopes to the metric, which is what makes the driver decomposition exact.
+drivers:
+  # Each factor is [numerator, denominator, label] with an optional fourth value that scales it for display.
+  # Ratio metrics: the factors telescope to the ratio, which is what makes the decomposition exact.
+  roas:
+    - [revenue, orders, Average order value]
+    - [orders, sessions, Conversion rate]
+    - [sessions, clicks, Click-to-session rate]
+    - [clicks, impressions, Click-through rate]
+    - [impressions, spend, Impressions per dollar (the inverse of CPM)]
+  cac:
+    - [spend, impressions, Cost per thousand impressions (CPM), 1000]
+    - [impressions, clicks, Impressions per click (the inverse of CTR)]
+    - [clicks, sessions, Clicks per session]
+    - [sessions, orders, Sessions per order (the inverse of conversion rate)]
+    - [orders, new_customers, Orders per new customer]
+  cpa:
+    - [spend, impressions, Cost per thousand impressions (CPM), 1000]
+    - [impressions, clicks, Impressions per click (the inverse of CTR)]
+    - [clicks, sessions, Clicks per session]
+    - [sessions, orders, Sessions per order (the inverse of conversion rate)]
+  cpc:
+    - [spend, impressions, Cost per thousand impressions (CPM), 1000]
+    - [impressions, clicks, Impressions per click (the inverse of CTR)]
+  rps:
+    - [revenue, orders, Average order value]
+    - [orders, sessions, Conversion rate]
+  # Additive metrics: the last factor is a level (denominator null), here the number of impressions.
+  revenue:
+    - [revenue, orders, Average order value]
+    - [orders, sessions, Conversion rate]
+    - [sessions, clicks, Click-to-session rate]
+    - [clicks, impressions, Click-through rate]
+    - [impressions, null, Impressions (volume)]
+  orders:
+    - [orders, sessions, Conversion rate]
+    - [sessions, clicks, Click-to-session rate]
+    - [clicks, impressions, Click-through rate]
+    - [impressions, null, Impressions (volume)]
+  sessions:
+    - [sessions, clicks, Click-to-session rate]
+    - [clicks, impressions, Click-through rate]
+    - [impressions, null, Impressions (volume)]
+  clicks:
+    - [clicks, impressions, Click-through rate]
+    - [impressions, null, Impressions (volume)]
+  new_customers:
+    - [new_customers, orders, New-customer share of orders]
+    - [orders, sessions, Conversion rate]
+    - [sessions, clicks, Click-to-session rate]
+    - [clicks, impressions, Click-through rate]
+    - [impressions, null, Impressions (volume)]
+  spend:
+    - [spend, impressions, Cost per thousand impressions (CPM), 1000]
+    - [impressions, null, Impressions (volume)]
+
+dimensions:
+  channel:
+    label: Channel
+    column: channel
+    label_column: channel_label
+    values:
+      paid_search:    {label: Paid Search,    synonyms: [paid search, search ads, ppc, sem, search advertising]}
+      paid_social:    {label: Paid Social,    synonyms: [paid social, social ads, social advertising, social media ads, social]}
+      display:        {label: Display,        synonyms: [display, display ads, programmatic, banner ads]}
+      email:          {label: Email,          synonyms: [email, e-mail, emails, crm email]}
+      organic_search: {label: Organic Search, synonyms: [organic search, organic, seo, natural search]}
+  region:
+    label: Region
+    column: region
+    values:
+      Northeast: {label: Northeast, synonyms: [northeast, north east, ne]}
+      Midwest:   {label: Midwest,   synonyms: [midwest, mid west]}
+      South:     {label: South,     synonyms: [south, southern]}
+      West:      {label: West,      synonyms: [west, western]}
+  channel_group:
+    label: Channel group
+    column: channel_group
+    values:
+      paid:  {label: Paid,  synonyms: [paid channels, paid media, paid, paid only]}
+      owned: {label: Owned, synonyms: [owned channels, owned media, owned, free channels]}
+  objective:
+    label: Objective
+    column: objective
+    label_column: objective_label
+    values:
+      acquisition:    {label: Acquisition,    synonyms: [acquisition campaigns, prospecting campaigns]}
+      retargeting:    {label: Retargeting,    synonyms: [retargeting campaigns, remarketing campaigns]}
+      retention:      {label: Retention,      synonyms: [retention campaigns, lifecycle campaigns]}
+      demand_capture: {label: Demand capture, synonyms: [demand capture campaigns, brand campaigns]}
+  campaign:
+    label: Campaign
+    column: campaign
+    values: {}        # filled from dim_campaign at startup
+
+# Things people ask about that this warehouse cannot answer. The copilot says so instead of guessing.
+unsupported:
+  profit:        {terms: [profit, margin, gross margin, contribution margin, net revenue], why: "the warehouse has revenue and media spend only, with no costs of goods or fees, so profit cannot be computed", suggest: [roas, cac]}
+  roi:           {terms: [roi, return on investment], why: "ROI needs all costs, not just media spend", suggest: [roas]}
+  ltv:           {terms: [ltv, lifetime value, clv, customer lifetime value], why: "there is no customer-level history in this dataset, only daily aggregates", suggest: [cac, aov]}
+  retention:     {terms: [churn, retention rate, repeat rate, repeat purchase rate], why: "retention needs customer-level data, which this warehouse does not hold (Project-2 covers cohorts)", suggest: [new_customers]}
+  attribution:   {terms: [attribution, multi-touch, multi touch, assisted conversions, incrementality, incremental], why: "facts are channel-level last-touch totals, so attribution and incrementality cannot be estimated here (Project-1 covers this)", suggest: [revenue, roas]}
+  engagement:    {terms: [bounce rate, time on site, nps, sentiment, pages per session], why: "those measures are not loaded in this warehouse", suggest: [sessions, cvr]}
+  budget:        {terms: [budget recommendation, optimal budget, optimize budget, optimize my budget, optimise my budget, budget allocation, allocate budget, reallocate, mmm, marketing mix], why: "the copilot describes performance; budget allocation needs experiments or a causal model", suggest: [roas, cac]}
+
+# Extra glossary entries retrieved for definition questions and used as background context.
+glossary:
+  - id: blended_vs_paid
+    keywords: paid owned blended spend metrics channels roas cac cpa cpc
+    title: Paid versus blended metrics
+    text: >
+      Spend-based metrics (ROAS, CAC, CPA, CPC, CPM) are only defined for paid channels, because email and organic
+      search carry no media spend in this data. Unless a question names owned channels, these metrics are limited to
+      paid channels. Revenue, orders and sessions cover every channel.
+  - id: how_comparisons_work
+    keywords: compare comparison period versus change baseline bootstrap noise week over week month over month
+    title: How period comparisons work
+    text: >
+      A comparison sets one period against another. If none is named, the previous period of the same length is used.
+      Ratios are always recomputed from summed numerators and denominators, never averaged across days. When the
+      two periods have different lengths, additive measures such as revenue are compared per day.
+      A bootstrap over days labels a change as clear or within normal day-to-day noise.
+  - id: driver_analysis
+    keywords: why drivers decomposition explain change funnel factors mix rate segments contribution
+    title: How driver analysis works
+    text: >
+      For ratio metrics the funnel is split into multiplicative factors, such as average order value, conversion rate,
+      click-to-session rate and clicks per dollar for ROAS. The change in each factor is exact and sums to the total
+      change on a log scale. The same change is also split across segments (channels or campaigns) into a mix effect
+      (spend moved between segments) and a rate effect (a segment got better or worse). This describes where the
+      change came from. It does not prove why it happened.
+  - id: anomaly_method
+    keywords: anomaly anomalies outlier unusual spike drop detection detect flagged incident z score seasonal
+    title: How anomalies are found
+    text: >
+      Each daily series is split into trend, weekly pattern and residual with a robust seasonal decomposition. A day is
+      flagged only when its residual is more than 8 robust standard deviations from normal and the value is at least
+      15% away from what was expected, which keeps false alarms to roughly one every five years per series on clean data. Consecutive flagged days are
+      merged into one incident. Known retail dates such as Black Friday are labelled so they are not mistaken for faults.
+  - id: forecast_method
+    keywords: forecast forecasting predict projection exponential smoothing horizon backtest
+    title: How forecasts work
+    text: >
+      Forecasts use exponential smoothing with a weekly pattern, tested first on the most recent 28 days against a
+      seasonal-naive baseline. The warehouse holds one year of history, so annual seasonality cannot be learned and
+      holiday peaks are not anticipated. Horizons are limited to 8 weeks.
+  - id: correlation_caution
+    keywords: causation causal correlation incrementality incremental holdout experiment caused
+    title: Association is not causation
+    text: >
+      A metric moving at the same time as another change does not show that the change caused it. Use a randomised
+      holdout or A/B test to measure incrementality before moving budget.
+  - id: data_coverage
+    keywords: data gaps missing coverage history range dates
+    title: Data coverage and gaps
+    text: >
+      The warehouse holds daily rows for 20 campaigns in 4 regions from 28 September 2025 to 27 September 2026.
+      If a channel is missing rows for a day in the period asked about, the answer says so.
+
+# Plain-language definitions, shown for definition questions and indexed for retrieval.
+definitions:
+  spend:         {meaning: "Money spent on paid media (search, social and display). Email and organic search have no media spend in this data.", read_as: "Compare with revenue or orders to judge efficiency.", watch_out: "Spend alone says nothing about results."}
+  impressions:   {meaning: "Times an ad or email was shown or delivered, or an organic result appeared in search.", read_as: "A measure of reach.", watch_out: "Not comparable across channels: an email delivery and a display impression are different events."}
+  clicks:        {meaning: "Clicks on an ad, email or organic search result.", read_as: "Interest in the message.", watch_out: "Some clicks never become sessions (bots, quick back-clicks)."}
+  sessions:      {meaning: "Visits to the website that started from a click.", read_as: "Traffic that reached the site.", watch_out: "Sessions are lower than clicks because not every click lands."}
+  orders:        {meaning: "Completed purchases. Conversions in this warehouse are orders.", read_as: "Volume of sales.", watch_out: "An order is not a customer: repeat buyers place several."}
+  revenue:       {meaning: "Order value in dollars before returns, discounts beyond the order price, or costs.", read_as: "Sales generated.", watch_out: "Revenue is not profit."}
+  new_customers: {meaning: "Customers placing their first order.", read_as: "How many people the marketing brought in for the first time.", watch_out: "Retargeting and email mostly reach existing customers, so new customers come mainly from acquisition campaigns."}
+  ctr:           {meaning: "Share of impressions that were clicked.", read_as: "How compelling the creative or message is.", watch_out: "A very high CTR on brand terms reflects intent that already existed."}
+  cpc:           {meaning: "Average media spend per click.", read_as: "How expensive traffic is.", watch_out: "A cheap click that never converts is not cheap."}
+  cpm:           {meaning: "Media spend per thousand impressions.", read_as: "The price of reach, mainly set by the ad auction.", watch_out: "A rising CPM with a flat budget means fewer impressions."}
+  cvr:           {meaning: "Share of sessions that ended in an order.", read_as: "How well the site and offer turn visitors into buyers.", watch_out: "It moves with traffic quality, so a new low-intent audience lowers it without anything being wrong with the site."}
+  aov:           {meaning: "Average revenue per order.", read_as: "How much each buyer spends.", watch_out: "A few large orders can lift it; read it with order counts."}
+  roas:          {meaning: "Revenue generated per dollar of paid media spend.", read_as: "Above 1.0x means revenue exceeds media spend; it must clear costs of goods and fees to be profitable.", watch_out: "Credited revenue is not necessarily incremental revenue; brand search and retargeting look efficient partly because those customers were likely to buy anyway."}
+  cac:           {meaning: "Paid media spend per new customer.", read_as: "What it costs to bring in a first-time buyer.", watch_out: "Counts only media spend, so it understates the full cost of acquisition."}
+  cpa:           {meaning: "Paid media spend per order (new or returning customers).", read_as: "The cost of a sale.", watch_out: "Includes repeat buyers, so it is lower than CAC."}
+  rps:           {meaning: "Revenue divided by sessions.", read_as: "The value of an average visit, combining conversion rate and order value.", watch_out: "Moves with both conversion and basket size."}
